@@ -181,6 +181,10 @@ func dataSourceAwsInstance() *schema.Resource {
 							Type:     schema.TypeBool,
 							Computed: true,
 						},
+						"kms_key_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 
 						"iops": {
 							Type:     schema.TypeInt,
@@ -216,6 +220,15 @@ func dataSourceAwsInstance() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"delete_on_termination": {
 							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"encrypted": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+						"kms_key_id": {
+							Type:     schema.TypeString,
 							Computed: true,
 						},
 

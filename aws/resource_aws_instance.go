@@ -335,7 +335,12 @@ func resourceAwsInstance() *schema.Resource {
 							Computed: true,
 							ForceNew: true,
 						},
-
+						"kms_key_id": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+							ForceNew: true,
+						},
 						"iops": {
 							Type:             schema.TypeInt,
 							Optional:         true,
@@ -457,6 +462,18 @@ func resourceAwsInstance() *schema.Resource {
 						"volume_id": {
 							Type:     schema.TypeString,
 							Computed: true,
+						},
+						"encrypted": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Computed: true,
+							ForceNew: true,
+						},
+						"kms_key_id": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+							ForceNew: true,
 						},
 					},
 				},
@@ -1328,6 +1345,12 @@ func readBlockDevicesFromInstance(instance *ec2.Instance, conn *ec2.EC2) (map[st
 		if vol.Iops != nil {
 			bd["iops"] = *vol.Iops
 		}
+		if vol.Encrypted != nil {
+			bd["encrypted"] = *vol.Encrypted
+		}
+		if vol.KmsKeyId != nil {
+			bd["kms_key_id"] = *vol.KmsKeyId
+		}
 
 		if blockDeviceIsRoot(instanceBd, instance) {
 			blockDevices["root"] = bd
@@ -1335,13 +1358,9 @@ func readBlockDevicesFromInstance(instance *ec2.Instance, conn *ec2.EC2) (map[st
 			if instanceBd.DeviceName != nil {
 				bd["device_name"] = *instanceBd.DeviceName
 			}
-			if vol.Encrypted != nil {
-				bd["encrypted"] = *vol.Encrypted
-			}
 			if vol.SnapshotId != nil {
 				bd["snapshot_id"] = *vol.SnapshotId
 			}
-
 			blockDevices["ebs"] = append(blockDevices["ebs"].([]map[string]interface{}), bd)
 		}
 	}
@@ -1498,6 +1517,10 @@ func readBlockDeviceMappingsFromConfig(
 				ebs.Encrypted = aws.Bool(v)
 			}
 
+			if v, ok := bd["kms_key_id"].(string); ok && v != "" {
+				ebs.KmsKeyId = aws.String(v)
+			}
+
 			if v, ok := bd["volume_size"].(int); ok && v != 0 {
 				ebs.VolumeSize = aws.Int64(int64(v))
 			}
@@ -1561,6 +1584,13 @@ func readBlockDeviceMappingsFromConfig(
 
 			if v, ok := bd["volume_type"].(string); ok && v != "" {
 				ebs.VolumeType = aws.String(v)
+			}
+			if v, ok := bd["encrypted"].(bool); ok && v {
+				ebs.Encrypted = aws.Bool(v)
+			}
+
+			if v, ok := bd["kms_key_id"].(string); ok && v != "" {
+				ebs.KmsKeyId = aws.String(v)
 			}
 
 			if v, ok := bd["iops"].(int); ok && v > 0 && *ebs.VolumeType == "io1" {
